@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"gorm.io/driver/postgres"
@@ -10,18 +9,37 @@ import (
 )
 
 type Product struct {
-	ID     uint `gorm:"primaryKey"`
-	Name   string
-	Price  float64
-	Stock  int
-	Orders []Order
+	ID    uint `gorm:"primaryKey"`
+	Name  string
+	Price float64
+	Stock int
 }
 
 type Order struct {
+	ID       uint `gorm:"primaryKey"`
+	Products []ProductOrder
+}
+type ProductOrder struct {
 	ID        uint `gorm:"primaryKey"`
 	ProductID uint
 	Product   Product
+	OrderID   uint
+	Order     Order
 	Amount    int
+}
+
+type User struct {
+	gorm.Model
+	Username string
+	Profile  StudentProfile
+}
+
+type StudentProfile struct {
+	ID          uint `gorm:"primaryKey"`
+	UserID      uint
+	CompanyName string
+	JobTile     string
+	Level       string
 }
 
 func main() {
@@ -35,6 +53,9 @@ func main() {
 	err = db.Migrator().DropTable(
 		&Product{},
 		&Order{},
+		&User{},
+		&StudentProfile{},
+		&ProductOrder{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -42,6 +63,9 @@ func main() {
 	err = db.Migrator().AutoMigrate(
 		&Product{},
 		&Order{},
+		&User{},
+		&StudentProfile{},
+		&ProductOrder{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -52,36 +76,67 @@ func main() {
 		Price: 350,
 		Stock: 200,
 	}
-	db.Create(&shirt)
 
-	shirt2 := Product{
+	short := Product{
 		Name:  "T-Shirt V.2",
 		Price: 400,
 		Stock: 100,
 	}
-	db.Create(&shirt2)
+
+	toy := Product{
+		Name:  "car toy",
+		Price: 400,
+		Stock: 100,
+	}
+
+	db.Create(&shirt)
+	db.Create(&short)
+	db.Create(&toy)
 
 	order1 := Order{
-		ProductID: shirt.ID,
-		Amount:    2,
+		Products: []ProductOrder{
+			{ProductID: shirt.ID, Amount: 1},
+			{ProductID: short.ID, Amount: 1},
+		},
 	}
 
 	db.Create(&order1)
 
 	order2 := Order{
-		ProductID: shirt.ID,
-		Amount:    3,
+		Products: []ProductOrder{
+			{ProductID: shirt.ID, Amount: 1},
+			{ProductID: toy.ID, Amount: 1},
+		},
 	}
+
 	db.Create(&order2)
 
-	var found Product
-	db.Preload("Orders").First(&found, 1)
-
-	fmt.Printf("\n\n %+v \n\n", found)
-
-	var found2 Order
-	db.Preload("Product").First(&found2, 1)
-
-	fmt.Printf("\n\n %+v \n\n", found2)
-
 }
+
+//ถึง 1.58
+
+// var found Product
+// db.Preload("Orders").First(&found, 1)
+
+// fmt.Printf("\n\n %+v \n\n", found)
+
+// var found2 Order
+// db.Preload("Product").First(&found2, 1)
+
+// fmt.Printf("\n\n %+v \n\n", found2)
+
+// user := User{
+// 	Username: "pong",
+// 	Profile: StudentProfile{
+// 		CompanyName: "ODDS",
+// 		JobTile:     "Golang Developer",
+// 		Level:       "Poring",
+// 	},
+// }
+
+// db.Save(&user)
+
+// var foundUser User
+// db.Preload("Profile").First(&foundUser, user.ID)
+
+// fmt.Println(foundUser)
